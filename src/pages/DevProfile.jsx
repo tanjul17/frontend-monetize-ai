@@ -1,5 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { motion, AnimatePresence } from "framer-motion";
+import { getDeveloperModels } from "../services/modelService";
+
+// Icons
+import {
+  UserCircleIcon,
+  BuildingOfficeIcon,
+  DocumentTextIcon,
+  KeyIcon,
+  ClipboardDocumentIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  CheckCircleIcon,
+  ExclamationCircleIcon,
+} from "@heroicons/react/24/outline";
 
 const DevProfile = () => {
   const { currentUser, updateProfile } = useAuth();
@@ -12,25 +27,60 @@ const DevProfile = () => {
     bio: currentUser?.profile?.bio || "",
   });
 
-  // Mock data for published models - in a real app, this would come from an API
-  const [publishedModels] = useState([
-    {
-      id: "model1",
-      name: "Text Classification Model",
-      description: "A model for classifying text into categories",
-      status: "active",
-      usageCount: 1243,
-      revenue: 560.2,
-    },
-    {
-      id: "model2",
-      name: "Image Recognition API",
-      description: "Identifies objects in images with high accuracy",
-      status: "pending-review",
-      usageCount: 0,
-      revenue: 0,
-    },
-  ]);
+  // API Key states
+  const [apiKey, setApiKey] = useState(""); // In a real app, this would be fetched from an API
+  const [isApiKeyVisible, setIsApiKeyVisible] = useState(false);
+  const [apiKeyLoading, setApiKeyLoading] = useState(true);
+  const [apiKeyCopied, setApiKeyCopied] = useState(false);
+  const apiKeyRef = useRef(null);
+
+  // For real data fetching (disabled for now since we don't have a confirmed API endpoint)
+  const [publishedModels, setPublishedModels] = useState([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [hasModelsData, setHasModelsData] = useState(false);
+
+  // Function to fetch models data if API is available
+  useEffect(() => {
+    const fetchModels = async () => {
+      setModelsLoading(true);
+      try {
+        const response = await getDeveloperModels();
+        if (response && response.data && Array.isArray(response.data)) {
+          setPublishedModels(
+            response.data.filter((model) => model.status === "active")
+          );
+          setHasModelsData(response.data.length > 0);
+        }
+      } catch (err) {
+        console.error("Error fetching models:", err);
+        // API might not be available, silently fail
+      } finally {
+        setModelsLoading(false);
+      }
+    };
+
+    // Simulating API key fetch (in a real app, this would be a separate API call)
+    const fetchApiKey = async () => {
+      setApiKeyLoading(true);
+      try {
+        // Simulate API call with timeout
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        // This would be the API response in a real implementation
+        setApiKey(
+          "api_" +
+            Math.random().toString(36).substring(2, 15) +
+            Math.random().toString(36).substring(2, 15)
+        );
+      } catch (err) {
+        console.error("Error fetching API key:", err);
+      } finally {
+        setApiKeyLoading(false);
+      }
+    };
+
+    fetchApiKey();
+    fetchModels();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -58,6 +108,11 @@ const DevProfile = () => {
 
       if (response.success) {
         setSuccess("Profile updated successfully!");
+
+        // Auto-dismiss success message after 3 seconds
+        setTimeout(() => {
+          setSuccess("");
+        }, 3000);
       }
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update profile");
@@ -66,84 +121,100 @@ const DevProfile = () => {
     }
   };
 
+  const toggleApiKeyVisibility = () => {
+    setIsApiKeyVisible(!isApiKeyVisible);
+  };
+
+  const copyApiKeyToClipboard = () => {
+    if (apiKeyRef.current) {
+      navigator.clipboard
+        .writeText(apiKeyRef.current.value)
+        .then(() => {
+          setApiKeyCopied(true);
+          setTimeout(() => setApiKeyCopied(false), 2000);
+        })
+        .catch((err) => {
+          console.error("Failed to copy API key:", err);
+        });
+    }
+  };
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.3,
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 24,
+      },
+    },
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="bg-white shadow rounded-lg p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
+      <motion.div
+        variants={itemVariants}
+        className="bg-white dark:bg-slate-800 shadow-md rounded-2xl p-6 border border-slate-100 dark:border-slate-700/30"
+      >
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">
           Developer Profile
         </h1>
 
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-red-500"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-xl border border-red-100 dark:border-red-800/20 flex items-start"
+            >
+              <ExclamationCircleIcon className="h-5 w-5 mr-2 flex-shrink-0" />
+              <p className="text-sm">{error}</p>
+            </motion.div>
+          )}
 
-        {success && (
-          <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-green-500"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-green-700">{success}</p>
-              </div>
-            </div>
-          </div>
-        )}
+          {success && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-xl border border-green-100 dark:border-green-800/20 flex items-start"
+            >
+              <CheckCircleIcon className="h-5 w-5 mr-2 flex-shrink-0" />
+              <p className="text-sm">{success}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        <div className="border-t border-gray-200 pt-4">
-          <div className="flex items-center mb-4">
-            <div className="bg-primary-100 p-2 rounded-full mr-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 text-primary-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
+        <div className="border-t border-slate-200 dark:border-slate-700/30 pt-6">
+          <div className="flex items-center mb-6">
+            <div className="bg-indigo-100 dark:bg-indigo-900/30 p-3 rounded-xl mr-4">
+              <UserCircleIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h2 className="text-lg font-medium text-gray-900">
+              <h2 className="text-lg font-medium text-slate-900 dark:text-white">
                 {currentUser?.email}
               </h2>
-              <p className="text-sm text-gray-500 capitalize">
+              <p className="text-sm text-slate-500 dark:text-slate-400 capitalize">
                 {currentUser?.role}
               </p>
             </div>
@@ -151,64 +222,144 @@ const DevProfile = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="mt-6">
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
               >
                 Name
               </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <UserCircleIcon className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                </div>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="mt-1 block w-full pl-10 border border-slate-300 dark:border-slate-600 rounded-xl shadow-sm py-2.5 px-3 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                  placeholder="Your name"
+                />
+              </div>
             </div>
 
             <div>
               <label
                 htmlFor="organization"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
               >
                 Organization
               </label>
-              <input
-                type="text"
-                id="organization"
-                name="organization"
-                value={formData.organization}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <BuildingOfficeIcon className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                </div>
+                <input
+                  type="text"
+                  id="organization"
+                  name="organization"
+                  value={formData.organization}
+                  onChange={handleChange}
+                  className="mt-1 block w-full pl-10 border border-slate-300 dark:border-slate-600 rounded-xl shadow-sm py-2.5 px-3 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                  placeholder="Your organization"
+                />
+              </div>
             </div>
 
             <div>
               <label
                 htmlFor="bio"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
               >
                 Bio
               </label>
-              <textarea
-                id="bio"
-                name="bio"
-                rows="3"
-                value={formData.bio}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              ></textarea>
+              <div className="relative">
+                <div className="absolute top-3 left-3 flex items-start pointer-events-none">
+                  <DocumentTextIcon className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                </div>
+                <textarea
+                  id="bio"
+                  name="bio"
+                  rows="4"
+                  value={formData.bio}
+                  onChange={handleChange}
+                  className="mt-1 block w-full pl-10 border border-slate-300 dark:border-slate-600 rounded-xl shadow-sm py-2.5 px-3 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                  placeholder="Tell us about yourself"
+                ></textarea>
+              </div>
             </div>
+
+            {apiKey && (
+              <div>
+                <label
+                  htmlFor="apiKey"
+                  className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+                >
+                  Your API Key
+                </label>
+                <div className="mt-1 relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <KeyIcon className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                  </div>
+                  <input
+                    ref={apiKeyRef}
+                    type={isApiKeyVisible ? "text" : "password"}
+                    id="apiKey"
+                    value={apiKeyLoading ? "Loading..." : apiKey}
+                    readOnly
+                    className="block w-full pl-10 pr-20 border border-slate-300 dark:border-slate-600 rounded-xl shadow-sm py-2.5 px-3 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                    disabled={apiKeyLoading}
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center">
+                    <button
+                      type="button"
+                      onClick={toggleApiKeyVisibility}
+                      className="p-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors focus:outline-none"
+                      disabled={apiKeyLoading}
+                    >
+                      {isApiKeyVisible ? (
+                        <EyeSlashIcon className="h-5 w-5" />
+                      ) : (
+                        <EyeIcon className="h-5 w-5" />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={copyApiKeyToClipboard}
+                      className="pr-3 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors focus:outline-none"
+                      disabled={apiKeyLoading}
+                    >
+                      <ClipboardDocumentIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                  <AnimatePresence>
+                    {apiKeyCopied && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute left-0 -bottom-8 text-xs text-green-600 dark:text-green-400 flex items-center"
+                      >
+                        <CheckCircleIcon className="h-4 w-4 mr-1" />
+                        Copied to clipboard
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="mt-6">
-            <button
+          <div className="mt-8">
+            <motion.button
               type="submit"
               disabled={loading}
-              className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`w-full sm:w-auto flex justify-center items-center px-5 py-2.5 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${
                 loading ? "opacity-75 cursor-not-allowed" : ""
               }`}
             >
@@ -234,126 +385,90 @@ const DevProfile = () => {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Saving...
+                  Saving Changes...
                 </>
               ) : (
                 "Save Changes"
               )}
-            </button>
+            </motion.button>
           </div>
         </form>
-      </div>
+      </motion.div>
 
-      {/* Published Models Section */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Published Models</h2>
-          <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-            Publish New Model
-          </button>
-        </div>
-
-        {publishedModels.length === 0 ? (
-          <p className="text-gray-500 italic">
-            You have not published any models yet.
-          </p>
-        ) : (
-          <div className="space-y-4">
-            {publishedModels.map((model) => (
-              <div
-                key={model.id}
-                className="border border-gray-200 rounded-md p-4"
-              >
-                <div className="flex justify-between">
-                  <h3 className="text-md font-medium text-gray-900">
-                    {model.name}
-                  </h3>
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      model.status === "active"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {model.status === "active" ? "Active" : "Pending Review"}
-                  </span>
-                </div>
-                <p className="mt-1 text-sm text-gray-600">
-                  {model.description}
-                </p>
-
-                <div className="mt-4 grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Usage</p>
-                    <p className="text-lg font-medium text-gray-900">
-                      {model.usageCount.toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Revenue</p>
-                    <p className="text-lg font-medium text-gray-900">
-                      ${model.revenue.toFixed(2)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex space-x-3">
-                  <button className="text-primary-600 hover:text-primary-800 text-sm font-medium">
-                    View Details
-                  </button>
-                  <button className="text-primary-600 hover:text-primary-800 text-sm font-medium">
-                    Edit
-                  </button>
-                  <button className="text-red-600 hover:text-red-800 text-sm font-medium">
-                    Unpublish
-                  </button>
-                </div>
-              </div>
-            ))}
+      {/* API integration conditionally renders real model data if available */}
+      {hasModelsData && publishedModels.length > 0 && (
+        <motion.div
+          variants={itemVariants}
+          className="bg-white dark:bg-slate-800 shadow-md rounded-2xl p-6 border border-slate-100 dark:border-slate-700/30"
+        >
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+              Published Models
+            </h2>
           </div>
-        )}
-      </div>
 
-      {/* API Keys Section */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">API Keys</h2>
-        <p className="text-gray-600 mb-4">
-          Use these keys to authenticate your API requests.
-        </p>
-
-        <div className="border border-gray-200 rounded-md p-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm font-medium text-gray-700">
-                Production Key
-              </p>
-              <p className="text-sm text-gray-500">Use for live applications</p>
+          {modelsLoading ? (
+            <div className="py-8 flex justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
             </div>
-            <button className="text-primary-600 hover:text-primary-800 text-sm font-medium">
-              Show Key
-            </button>
-          </div>
-        </div>
+          ) : publishedModels.length === 0 ? (
+            <p className="text-slate-500 dark:text-slate-400 italic">
+              You have not published any models yet.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {publishedModels.map((model) => (
+                <motion.div
+                  key={model.id || model._id}
+                  whileHover={{
+                    y: -2,
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                  }}
+                  className="border border-slate-200 dark:border-slate-700/50 rounded-xl p-4 bg-white/50 dark:bg-slate-800/50 transition-all"
+                >
+                  <div className="flex justify-between">
+                    <h3 className="text-md font-medium text-slate-900 dark:text-white">
+                      {model.name}
+                    </h3>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        model.status === "active"
+                          ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
+                          : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300"
+                      }`}
+                    >
+                      {model.status === "active" ? "Active" : "Pending Review"}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                    {model.description}
+                  </p>
 
-        <div className="mt-4 border border-gray-200 rounded-md p-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm font-medium text-gray-700">Test Key</p>
-              <p className="text-sm text-gray-500">
-                Use for development and testing
-              </p>
+                  <div className="mt-4 grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Usage
+                      </p>
+                      <p className="text-lg font-medium text-slate-900 dark:text-white">
+                        {(model.stats?.usageCount || 0).toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Revenue
+                      </p>
+                      <p className="text-lg font-medium text-slate-900 dark:text-white">
+                        ${(model.stats?.revenue || 0).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
             </div>
-            <button className="text-primary-600 hover:text-primary-800 text-sm font-medium">
-              Show Key
-            </button>
-          </div>
-        </div>
-
-        <button className="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-          Generate New Keys
-        </button>
-      </div>
-    </div>
+          )}
+        </motion.div>
+      )}
+    </motion.div>
   );
 };
 

@@ -1,47 +1,121 @@
-import React from 'react';
+import React from "react";
+import { motion } from "framer-motion";
+
+// Import CountUp for animating numbers
+const CountUp = ({ end, duration = 2, decimals = 0 }) => {
+  const [count, setCount] = React.useState(0);
+
+  React.useEffect(() => {
+    let startTime;
+    let animationFrame;
+
+    const updateCount = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / (duration * 1000), 1);
+
+      setCount(progress * end);
+
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(updateCount);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(updateCount);
+
+    return () => cancelAnimationFrame(animationFrame);
+  }, [end, duration]);
+
+  return decimals ? count.toFixed(decimals) : Math.floor(count);
+};
 
 const DashboardSummary = ({ summaryData }) => {
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 24,
+      },
+    },
+  };
+
   // Add a null check to handle cases where summary might be undefined
   if (!summaryData) {
     console.log("Missing or invalid summary data:", summaryData);
     return (
-      <div>
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Dashboard Summary</h2>
-        <div className="p-4 border border-gray-300 rounded-lg text-gray-600">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">
+          Dashboard Summary
+        </h2>
+        <motion.div
+          variants={itemVariants}
+          className="p-6 border border-slate-200 dark:border-slate-700/50 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 backdrop-blur-sm text-slate-700 dark:text-slate-300"
+        >
           No summary data available at this time.
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     );
   }
 
   // Handle the structure correctly - the API returns data in a nested 'data' property
   const data = summaryData.data || summaryData;
-  
+
   // Create defaults for missing values
-  const totalModels = data.totalModels || data.summary?.totalModels || data.models?.length || data.modelsPerformance?.length || 0;
-  const totalInteractions = data.totalInteractions || data.summary?.totalInteractions || 0;
+  const totalModels =
+    data.totalModels ||
+    data.summary?.totalModels ||
+    data.models?.length ||
+    data.modelsPerformance?.length ||
+    0;
+  const totalInteractions =
+    data.totalInteractions || data.summary?.totalInteractions || 0;
   const totalRevenue = data.totalRevenue || data.summary?.totalRevenue || 0;
   const totalTokens = data.totalTokens || data.summary?.totalTokens || 0;
 
   // Calculate derived metrics for dashboard summary
-  const revenuePerInteraction = totalInteractions > 0 ? 
-    parseFloat((totalRevenue / totalInteractions).toFixed(4)) : 0;
-  
-  const tokensPerInteraction = totalInteractions > 0 ?
-    Math.round(totalTokens / totalInteractions) : 0;
-    
-  const costPerToken = totalTokens > 0 ?
-    parseFloat((totalRevenue / totalTokens).toFixed(6)) : 0;
-  
+  const revenuePerInteraction =
+    totalInteractions > 0
+      ? parseFloat((totalRevenue / totalInteractions).toFixed(4))
+      : 0;
+
+  const tokensPerInteraction =
+    totalInteractions > 0 ? Math.round(totalTokens / totalInteractions) : 0;
+
+  // eslint-disable-next-line no-unused-vars
+  const costPerToken =
+    totalTokens > 0 ? parseFloat((totalRevenue / totalTokens).toFixed(6)) : 0;
+
   // Projected revenue
-  const projectedMonthlyRevenue = parseFloat((totalRevenue * (30 / 7)).toFixed(2)); // Assuming weekly data
-  const projectedYearlyRevenue = parseFloat((projectedMonthlyRevenue * 12).toFixed(2));
+  const projectedMonthlyRevenue = parseFloat(
+    (totalRevenue * (30 / 7)).toFixed(2)
+  ); // Assuming weekly data
+  const projectedYearlyRevenue = parseFloat(
+    (projectedMonthlyRevenue * 12).toFixed(2)
+  );
 
   const formatNumber = (num) => {
     if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
+      return (num / 1000000).toFixed(1) + "M";
     } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
+      return (num / 1000).toFixed(1) + "K";
     } else {
       return num.toString();
     }
@@ -53,161 +127,400 @@ const DashboardSummary = ({ summaryData }) => {
 
   const formatTokens = (tokens) => {
     if (tokens >= 1000000) {
-      return (tokens / 1000000).toFixed(1) + 'M';
+      return (tokens / 1000000).toFixed(1) + "M";
     } else if (tokens >= 1000) {
-      return (tokens / 1000).toFixed(1) + 'K';
+      return (tokens / 1000).toFixed(1) + "K";
     } else {
       return tokens.toString();
     }
   };
 
+  const getTooltipText = (metricId) => {
+    const tooltips = {
+      models: "Total number of AI models you have created",
+      interactions:
+        "Total user interactions with your models in the selected timeframe",
+      revenue:
+        "Total revenue generated from your models in the selected timeframe",
+      tokens: "Total number of tokens processed by your models",
+      revenuePerInteraction: "Average revenue generated per user interaction",
+      tokensPerInteraction: "Average number of tokens used per interaction",
+      projectedMonthly:
+        "Projected monthly revenue based on current performance",
+      projectedYearly:
+        "Projected yearly revenue based on current monthly projections",
+    };
+
+    return tooltips[metricId] || "No description available";
+  };
+
   const summaryItems = [
     {
-      id: 'models',
-      label: 'Total Models',
+      id: "models",
+      label: "Total Models",
       value: totalModels,
       formattedValue: totalModels.toString(),
       icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-8 w-8 text-blue-600 dark:text-blue-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+          <line x1="12" y1="22.08" x2="12" y2="12" />
         </svg>
       ),
-      bgColor: 'bg-blue-50',
-      textColor: 'text-blue-800',
+      bgGradient: "from-blue-500/5 to-blue-600/10",
+      borderColor: "border-blue-200 dark:border-blue-800/30",
+      textColor: "text-blue-600 dark:text-blue-400",
     },
     {
-      id: 'interactions',
-      label: 'Total Interactions',
+      id: "interactions",
+      label: "Total Interactions",
       value: totalInteractions,
       formattedValue: formatNumber(totalInteractions),
       icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-          <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-8 w-8 text-green-600 dark:text-green-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          <path d="M13 8H7" />
+          <path d="M17 12H7" />
         </svg>
       ),
-      bgColor: 'bg-green-50',
-      textColor: 'text-green-800',
+      bgGradient: "from-green-500/5 to-green-600/10",
+      borderColor: "border-green-200 dark:border-green-800/30",
+      textColor: "text-green-600 dark:text-green-400",
     },
     {
-      id: 'revenue',
-      label: 'Total Revenue',
+      id: "revenue",
+      label: "Total Revenue",
       value: totalRevenue,
       formattedValue: formatRevenue(totalRevenue),
       icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-yellow-600" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-8 w-8 text-yellow-600 dark:text-yellow-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+          <path d="M12 18V6" />
         </svg>
       ),
-      bgColor: 'bg-yellow-50',
-      textColor: 'text-yellow-800',
+      bgGradient: "from-yellow-500/5 to-yellow-600/10",
+      borderColor: "border-yellow-200 dark:border-yellow-800/30",
+      textColor: "text-yellow-600 dark:text-yellow-400",
     },
     {
-      id: 'tokens',
-      label: 'Total Tokens',
+      id: "tokens",
+      label: "Total Tokens",
       value: totalTokens,
       formattedValue: formatTokens(totalTokens),
       icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-purple-600" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z" clipRule="evenodd" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-8 w-8 text-purple-600 dark:text-purple-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" />
+          <line x1="16" y1="8" x2="2" y2="22" />
+          <line x1="17.5" y1="15" x2="9" y2="15" />
         </svg>
       ),
-      bgColor: 'bg-purple-50',
-      textColor: 'text-purple-800',
+      bgGradient: "from-purple-500/5 to-purple-600/10",
+      borderColor: "border-purple-200 dark:border-purple-800/30",
+      textColor: "text-purple-600 dark:text-purple-400",
     },
   ];
-  
+
   const calculatedMetrics = [
     {
-      id: 'revenuePerInteraction',
-      label: 'Revenue/Interaction',
+      id: "revenuePerInteraction",
+      label: "Revenue/Interaction",
+      value: revenuePerInteraction,
       formattedValue: `$${revenuePerInteraction.toFixed(4)}`,
       icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6 text-indigo-600 dark:text-indigo-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
         </svg>
       ),
-      bgColor: 'bg-indigo-50',
-      textColor: 'text-indigo-800',
+      bgGradient: "from-indigo-500/5 to-indigo-600/10",
+      borderColor: "border-indigo-200 dark:border-indigo-800/30",
+      textColor: "text-indigo-600 dark:text-indigo-400",
     },
     {
-      id: 'tokensPerInteraction',
-      label: 'Tokens/Interaction',
+      id: "tokensPerInteraction",
+      label: "Tokens/Interaction",
+      value: tokensPerInteraction,
       formattedValue: formatNumber(tokensPerInteraction),
       icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-pink-600" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z" />
-          <path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z" />
-          <path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6 text-pink-600 dark:text-pink-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 3v3m0 4.5v3m0 4.5v3" />
+          <circle cx="12" cy="12" r="1.5" />
+          <path d="M7.5 7.5a6 6 0 0 0 0 9h9a6 6 0 0 0 0-9h-9Z" />
         </svg>
       ),
-      bgColor: 'bg-pink-50',
-      textColor: 'text-pink-800',
+      bgGradient: "from-pink-500/5 to-pink-600/10",
+      borderColor: "border-pink-200 dark:border-pink-800/30",
+      textColor: "text-pink-600 dark:text-pink-400",
     },
     {
-      id: 'projectedMonthly',
-      label: 'Projected Monthly',
+      id: "projectedMonthly",
+      label: "Projected Monthly",
+      value: projectedMonthlyRevenue,
       formattedValue: formatRevenue(projectedMonthlyRevenue),
       icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-cyan-600" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6 text-cyan-600 dark:text-cyan-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+          <path d="M8 14h.01" />
+          <path d="M12 14h.01" />
+          <path d="M16 14h.01" />
+          <path d="M8 18h.01" />
+          <path d="M12 18h.01" />
+          <path d="M16 18h.01" />
         </svg>
       ),
-      bgColor: 'bg-cyan-50',
-      textColor: 'text-cyan-800',
+      bgGradient: "from-cyan-500/5 to-cyan-600/10",
+      borderColor: "border-cyan-200 dark:border-cyan-800/30",
+      textColor: "text-cyan-600 dark:text-cyan-400",
     },
     {
-      id: 'projectedYearly',
-      label: 'Projected Yearly',
+      id: "projectedYearly",
+      label: "Projected Yearly",
+      value: projectedYearlyRevenue,
       formattedValue: formatRevenue(projectedYearlyRevenue),
       icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-teal-600" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6 text-teal-600 dark:text-teal-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+          <path d="M17 14h-6" />
+          <path d="M13 18H7" />
+          <path d="M7 14h.01" />
+          <path d="M17 18h.01" />
         </svg>
       ),
-      bgColor: 'bg-teal-50',
-      textColor: 'text-teal-800',
+      bgGradient: "from-teal-500/5 to-teal-600/10",
+      borderColor: "border-teal-200 dark:border-teal-800/30",
+      textColor: "text-teal-600 dark:text-teal-400",
     },
   ];
 
   return (
-    <div>
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">Dashboard Summary</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {summaryItems.map((item) => (
-          <div key={item.id} className={`${item.bgColor} p-6 rounded-lg shadow`}>
-            <div className="flex justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">{item.label}</p>
-                <p className={`text-2xl font-bold ${item.textColor}`}>{item.formattedValue}</p>
+    <motion.div variants={containerVariants} initial="hidden" animate="visible">
+      <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">
+        Dashboard Summary
+      </h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+        {summaryItems.map((item, index) => (
+          <motion.div
+            key={item.id}
+            variants={itemVariants}
+            whileHover={{ y: -5, transition: { duration: 0.2 } }}
+            className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${item.bgGradient} backdrop-blur-sm border ${item.borderColor} shadow-sm`}
+          >
+            <div className="absolute inset-0 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm"></div>
+            <div className="relative p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="group relative">
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 flex items-center">
+                      {item.label}
+                      <span className="ml-1.5 text-slate-400 dark:text-slate-500">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </span>
+                    </p>
+                    <div className="invisible group-hover:visible absolute z-10 w-64 p-3 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300 top-0 left-0 transform -translate-y-full mt-1">
+                      {getTooltipText(item.id)}
+                    </div>
+                  </div>
+                  <div className={`text-3xl font-bold ${item.textColor}`}>
+                    <CountUp
+                      end={item.value}
+                      decimals={
+                        typeof item.value === "number" && item.value % 1 !== 0
+                          ? 2
+                          : 0
+                      }
+                    />
+                    {item.id === "revenue" && (
+                      <span className="ml-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+                        USD
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <motion.div
+                  className="rounded-lg p-3"
+                  whileHover={{ rotate: [0, -10, 10, -10, 0], scale: 1.1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  {item.icon}
+                </motion.div>
               </div>
-              <div className={`${item.bgColor} rounded-full p-3`}>
-                {item.icon}
+
+              {/* Mini sparkline placeholder - could be replaced with actual mini charts */}
+              <div className="w-full h-8 mt-4 flex items-end space-x-0.5">
+                {Array.from({ length: 10 }).map((_, i) => {
+                  const height = Math.floor(Math.random() * 24) + 8; // Random height between 8-32px
+                  return (
+                    <motion.div
+                      key={i}
+                      initial={{ height: 0 }}
+                      animate={{ height }}
+                      transition={{ delay: i * 0.05, duration: 0.5 }}
+                      className={`w-full max-w-[5px] rounded-sm ${item.textColor} opacity-30`}
+                    ></motion.div>
+                  );
+                })}
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
-      
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">Calculated Metrics</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+      <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">
+        Calculated Metrics
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {calculatedMetrics.map((item) => (
-          <div key={item.id} className={`${item.bgColor} p-6 rounded-lg shadow`}>
-            <div className="flex justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">{item.label}</p>
-                <p className={`text-2xl font-bold ${item.textColor}`}>{item.formattedValue}</p>
-              </div>
-              <div className={`${item.bgColor} rounded-full p-3`}>
-                {item.icon}
+          <motion.div
+            key={item.id}
+            variants={itemVariants}
+            whileHover={{ y: -5, transition: { duration: 0.2 } }}
+            className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${item.bgGradient} backdrop-blur-sm border ${item.borderColor} shadow-sm`}
+          >
+            <div className="absolute inset-0 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm"></div>
+            <div className="relative p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="group relative">
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 flex items-center">
+                      {item.label}
+                      <span className="ml-1.5 text-slate-400 dark:text-slate-500">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </span>
+                    </p>
+                    <div className="invisible group-hover:visible absolute z-10 w-64 p-3 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300 top-0 left-0 transform -translate-y-full mt-1">
+                      {getTooltipText(item.id)}
+                    </div>
+                  </div>
+                  <div className={`text-2xl font-bold ${item.textColor}`}>
+                    <CountUp
+                      end={item.value}
+                      decimals={
+                        typeof item.value === "number" && item.value % 1 !== 0
+                          ? 4
+                          : 0
+                      }
+                    />
+                  </div>
+                </div>
+                <motion.div
+                  className="rounded-lg p-2"
+                  whileHover={{ rotate: [0, -10, 10, -10, 0], scale: 1.1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  {item.icon}
+                </motion.div>
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
-export default DashboardSummary; 
+export default DashboardSummary;
