@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import TokenDisplay from "../TokenDisplay";
+import ThemeToggle from "./ThemeToggle";
 
 const Navbar = () => {
   const { currentUser, logout } = useAuth();
@@ -53,60 +53,60 @@ const Navbar = () => {
 
   // Dropdown animation
   const dropdownVariants = {
-    hidden: { 
-      opacity: 0, 
+    hidden: {
+      opacity: 0,
       y: -10,
       scale: 0.95,
       transition: {
-        duration: 0.2
-      } 
+        duration: 0.2,
+      },
     },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
       scale: 1,
       transition: {
         type: "spring",
         stiffness: 300,
         damping: 20,
-        duration: 0.3
-      }
+        duration: 0.3,
+      },
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       y: -10,
       scale: 0.95,
       transition: {
-        duration: 0.2
-      } 
-    }
+        duration: 0.2,
+      },
+    },
   };
 
   // Mobile menu animation
   const mobileMenuVariants = {
-    hidden: { 
+    hidden: {
       height: 0,
       opacity: 0,
       transition: {
-        duration: 0.2
-      }
+        duration: 0.2,
+      },
     },
-    visible: { 
+    visible: {
       height: "auto",
       opacity: 1,
       transition: {
         duration: 0.3,
         staggerChildren: 0.05,
-        delayChildren: 0.05
-      }
+        delayChildren: 0.05,
+      },
     },
-    exit: { 
+    exit: {
       height: 0,
       opacity: 0,
       transition: {
-        duration: 0.2
-      }
-    }
+        duration: 0.2,
+      },
+    },
   };
 
   // Hamburger button animation
@@ -123,7 +123,7 @@ const Navbar = () => {
         default:
           return {};
       }
-    }
+    },
   };
 
   // Check if a nav link is active
@@ -141,13 +141,19 @@ const Navbar = () => {
       scale: 1.05,
       transition: {
         duration: 0.2,
-        ease: "easeInOut"
-      }
-    }
+        ease: "easeInOut",
+      },
+    },
   };
 
   return (
-    <nav className={`sticky top-0 z-50 transition-all duration-300 backdrop-blur-sm ${scrolled ? "bg-white/90 shadow-lg py-2" : "bg-white/95 py-4"}`}>
+    <nav
+      className={`sticky top-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? "bg-white/60 dark:bg-dark-800/70 backdrop-blur-md border-b border-gray-100 dark:border-dark-300/20 shadow-sm dark:shadow-dark-900/10 py-2"
+          : "bg-white/30 dark:bg-dark-800/30 backdrop-blur-sm py-4"
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
@@ -157,14 +163,20 @@ const Navbar = () => {
                 whileHover="hover"
                 variants={logoVariants}
               >
-                <Link to="/" className="text-xl font-bold text-primary-600 flex items-center group">
-                  <motion.span 
-                    className="mr-2 text-2xl bg-primary-50 p-2 rounded-full flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow duration-300"
-                    whileHover={{ rotate: [0, -10, 10, -5, 0], transition: { duration: 0.5 } }}
+                <Link
+                  to="/"
+                  className="text-xl font-bold flex items-center group"
+                >
+                  <motion.span
+                    className="mr-2 text-2xl bg-gradient-to-br from-accent-blue/10 to-accent-purple/10 dark:from-accent-blue/20 dark:to-accent-purple/20 p-2 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/10 dark:border-white/5 shadow-sm group-hover:shadow-md transition-all duration-300"
+                    whileHover={{
+                      rotate: [0, -10, 10, -5, 0],
+                      transition: { duration: 0.5 },
+                    }}
                   >
                     🧠
-                  </motion.span> 
-                  <span className="bg-gradient-to-r from-primary-600 to-primary-500 bg-clip-text text-transparent">
+                  </motion.span>
+                  <span className="font-satoshi font-bold bg-gradient-to-r from-accent-blue to-accent-purple bg-clip-text text-transparent">
                     MonetizeAI
                   </span>
                 </Link>
@@ -191,7 +203,10 @@ const Navbar = () => {
                   <NavLink
                     path="/developer-dashboard"
                     label="Analytics"
-                    isActive={isActive("/developer-dashboard") || isActive("/model-analytics")}
+                    isActive={
+                      isActive("/developer-dashboard") ||
+                      isActive("/model-analytics")
+                    }
                   />
                 </>
               )}
@@ -214,21 +229,21 @@ const Navbar = () => {
             </div>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
-            {currentUser && (
-              <TokenDisplay />
-            )}
-            
+            <ThemeToggle />
+
+            {currentUser && <TokenDisplay />}
+
             {!currentUser ? (
               <div className="flex items-center space-x-3">
                 <Link
                   to="/login"
-                  className="bg-primary-50 hover:bg-primary-100 text-primary-700 px-4 py-2 rounded-md text-sm font-medium transition-colors duration-300"
+                  className="bg-gray-100 hover:bg-gray-200 dark:bg-dark-300/30 dark:hover:bg-dark-300/50 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300"
                 >
                   Log in
                 </Link>
                 <Link
                   to="/register"
-                  className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm hover:shadow-md transition-all duration-300"
+                  className="bg-gradient-to-r from-accent-blue to-accent-purple hover:from-accent-purple hover:to-accent-blue text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm hover:shadow-md transition-all duration-300"
                 >
                   Sign up
                 </Link>
@@ -238,60 +253,46 @@ const Navbar = () => {
                 <div>
                   <button
                     onClick={toggleProfile}
-                    className="bg-white rounded-full flex text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300 group"
+                    className="rounded-full flex text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-blue dark:focus:ring-offset-dark-800 transition-all duration-300 group"
                     id="user-menu"
                     aria-expanded="false"
                     aria-haspopup="true"
                   >
                     <span className="sr-only">Open user menu</span>
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary-100 to-blue-100 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300">
-                      <span className="text-primary-800 font-semibold text-sm">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-accent-blue/30 to-accent-purple/30 dark:from-accent-blue/50 dark:to-accent-purple/50 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300">
+                      <span className="text-accent-blue dark:text-white font-semibold text-sm">
                         {(
                           currentUser.profile?.name ||
                           currentUser.email ||
                           "User"
                         )
-                          .charAt(0)
+                          .substring(0, 1)
                           .toUpperCase()}
                       </span>
                     </div>
                   </button>
                 </div>
-
                 <AnimatePresence>
                   {isProfileOpen && (
                     <motion.div
-                      className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
-                      role="menu"
-                      aria-orientation="vertical"
-                      aria-labelledby="user-menu"
                       initial="hidden"
                       animate="visible"
                       exit="exit"
                       variants={dropdownVariants}
+                      className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-xl py-1 bg-white/90 dark:bg-dark-400/90 backdrop-blur-md border border-gray-100 dark:border-dark-300/20 ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+                      role="menu"
+                      aria-orientation="vertical"
+                      aria-labelledby="user-menu"
                     >
-                      <div className="px-4 py-2 text-xs text-gray-400 border-b">
-                        Signed in as
-                        <div className="font-semibold text-gray-600 truncate max-w-[176px]">
-                          {currentUser.email}
-                        </div>
-                      </div>
-
-                      {currentUser?.role === "user" && (
-                        <ProfileLink
-                          to="/user-profile"
-                          label="Your Profile"
-                          onClick={() => setIsProfileOpen(false)}
-                        />
-                      )}
-
-                      {currentUser?.role === "developer" && (
-                        <ProfileLink
-                          to="/dev-profile"
-                          label="Developer Profile"
-                          onClick={() => setIsProfileOpen(false)}
-                        />
-                      )}
+                      <ProfileLink
+                        to={
+                          currentUser?.role === "developer"
+                            ? "/dev-profile"
+                            : "/user-profile"
+                        }
+                        label="Your Profile"
+                        onClick={() => setIsProfileOpen(false)}
+                      />
 
                       <ProfileLink
                         to="/dashboard"
@@ -299,189 +300,212 @@ const Navbar = () => {
                         onClick={() => setIsProfileOpen(false)}
                       />
 
-                      <button
-                        onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors duration-200"
-                        role="menuitem"
-                      >
-                        Sign out
-                      </button>
+                      {currentUser?.role === "developer" && (
+                        <>
+                          <ProfileLink
+                            to="/models"
+                            label="My Models"
+                            onClick={() => setIsProfileOpen(false)}
+                          />
+                          <ProfileLink
+                            to="/developer-dashboard"
+                            label="Analytics"
+                            onClick={() => setIsProfileOpen(false)}
+                          />
+                        </>
+                      )}
+
+                      <ProfileLink
+                        to="/token-history"
+                        label="Token History"
+                        onClick={() => setIsProfileOpen(false)}
+                      />
+
+                      <ProfileLink
+                        to="/buy-tokens"
+                        label="Buy More Tokens"
+                        onClick={() => setIsProfileOpen(false)}
+                      />
+
+                      <div>
+                        <button
+                          onClick={handleLogout}
+                          className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-300/30 w-full text-left transition-colors duration-300"
+                          role="menuitem"
+                        >
+                          Sign out
+                        </button>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
             )}
           </div>
-
-          {/* Mobile menu button */}
           <div className="flex items-center sm:hidden">
-            <motion.button
+            {/* Mobile theme toggle */}
+            <ThemeToggle />
+
+            {/* Hamburger menu button */}
+            <button
               onClick={toggleMenu}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-primary-500 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 transition-all duration-300"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-300/30 focus:outline-none transition-colors duration-300"
               aria-expanded="false"
-              initial={false}
-              animate={isMenuOpen ? "open" : "closed"}
             >
               <span className="sr-only">Open main menu</span>
-              <div className="w-6 h-6 flex flex-col justify-around">
-                <motion.div
+              <div className="w-6 h-6 flex flex-col justify-center items-center">
+                <motion.span
                   custom={1}
                   variants={lineVariants}
-                  className="w-6 h-1 bg-gray-400 rounded-full"
-                />
-                <motion.div
+                  animate={isMenuOpen ? "open" : "closed"}
+                  className="w-4 h-0.5 bg-gray-700 dark:bg-gray-300 rounded-full my-0.5 transform transition-all duration-300"
+                ></motion.span>
+                <motion.span
                   custom={2}
                   variants={lineVariants}
-                  className="w-6 h-1 bg-gray-400 rounded-full"
-                />
-                <motion.div
+                  animate={isMenuOpen ? "open" : "closed"}
+                  className="w-4 h-0.5 bg-gray-700 dark:bg-gray-300 rounded-full my-0.5 transform transition-all duration-300"
+                ></motion.span>
+                <motion.span
                   custom={3}
                   variants={lineVariants}
-                  className="w-6 h-1 bg-gray-400 rounded-full"
-                />
+                  animate={isMenuOpen ? "open" : "closed"}
+                  className="w-4 h-0.5 bg-gray-700 dark:bg-gray-300 rounded-full my-0.5 transform transition-all duration-300"
+                ></motion.span>
               </div>
-            </motion.button>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile navigation dropdown */}
       <AnimatePresence>
         {isMenuOpen && (
-          <motion.div 
-            className="sm:hidden overflow-hidden bg-white/95 backdrop-blur-sm shadow-inner"
-            variants={mobileMenuVariants}
+          <motion.div
             initial="hidden"
             animate="visible"
             exit="exit"
+            variants={mobileMenuVariants}
+            className="sm:hidden overflow-hidden"
           >
-            <div className="pt-2 pb-3 space-y-1">
-              <MobileNavLink path="/" label="Home" isActive={isActive("/")} onClick={() => setIsMenuOpen(false)} />
+            <div className="pt-2 pb-3 space-y-1 px-4 sm:px-6 lg:px-8 bg-white/90 dark:bg-dark-400/90 backdrop-blur-md border-t border-gray-100 dark:border-dark-300/20">
+              <MobileNavLink
+                path="/"
+                label="Home"
+                isActive={isActive("/")}
+                onClick={() => setIsMenuOpen(false)}
+              />
 
               {currentUser && (
-                <MobileNavLink path="/dashboard" label="Dashboard" isActive={isActive("/dashboard")} onClick={() => setIsMenuOpen(false)} />
+                <MobileNavLink
+                  path="/dashboard"
+                  label="Dashboard"
+                  isActive={isActive("/dashboard")}
+                  onClick={() => setIsMenuOpen(false)}
+                />
               )}
 
               {currentUser?.role === "developer" && (
                 <>
-                  <MobileNavLink path="/models" label="My Models" isActive={isActive("/models")} onClick={() => setIsMenuOpen(false)} />
-                  <MobileNavLink 
-                    path="/developer-dashboard" 
-                    label="Analytics Dashboard" 
-                    isActive={isActive("/developer-dashboard") || isActive("/model-analytics")} 
-                    onClick={() => setIsMenuOpen(false)} 
+                  <MobileNavLink
+                    path="/models"
+                    label="My Models"
+                    isActive={isActive("/models")}
+                    onClick={() => setIsMenuOpen(false)}
+                  />
+                  <MobileNavLink
+                    path="/developer-dashboard"
+                    label="Analytics"
+                    isActive={
+                      isActive("/developer-dashboard") ||
+                      isActive("/model-analytics")
+                    }
+                    onClick={() => setIsMenuOpen(false)}
                   />
                 </>
               )}
 
               {currentUser && (
-                <MobileNavLink path="/marketplace" label="AI Marketplace" isActive={isActive("/marketplace")} onClick={() => setIsMenuOpen(false)} />
+                <MobileNavLink
+                  path="/marketplace"
+                  label="AI Marketplace"
+                  isActive={isActive("/marketplace")}
+                  onClick={() => setIsMenuOpen(false)}
+                />
               )}
 
               {currentUser && (
-                <MobileNavLink path="/models/published" label="Published Models" isActive={isActive("/models/published")} onClick={() => setIsMenuOpen(false)} />
+                <MobileNavLink
+                  path="/models/published"
+                  label="Published Models"
+                  isActive={isActive("/models/published")}
+                  onClick={() => setIsMenuOpen(false)}
+                />
               )}
-            </div>
 
-            {!currentUser && (
-              <div className="pt-4 pb-5 border-t border-gray-200">
-                <div className="flex flex-col items-center space-y-3 px-4">
-                  <Link
-                    to="/login"
-                    className="w-full bg-primary-50 hover:bg-primary-100 text-primary-700 flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium transition-colors duration-200"
+              {currentUser && (
+                <>
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
+                  <MobileNavLink
+                    path={
+                      currentUser?.role === "developer"
+                        ? "/dev-profile"
+                        : "/user-profile"
+                    }
+                    label="Your Profile"
+                    isActive={
+                      isActive("/user-profile") || isActive("/dev-profile")
+                    }
                     onClick={() => setIsMenuOpen(false)}
-                  >
-                    Log in
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="w-full bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-md text-base font-medium transition-all duration-200"
+                  />
+                  <MobileNavLink
+                    path="/token-history"
+                    label="Token History"
+                    isActive={isActive("/token-history")}
                     onClick={() => setIsMenuOpen(false)}
-                  >
-                    Register
-                  </Link>
-                </div>
-              </div>
-            )}
+                  />
+                  <MobileNavLink
+                    path="/buy-tokens"
+                    label="Buy More Tokens"
+                    isActive={isActive("/buy-tokens")}
+                    onClick={() => setIsMenuOpen(false)}
+                  />
+                  <div>
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="block pl-3 pr-4 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-300/30 w-full text-left transition-colors duration-300 rounded-md"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                </>
+              )}
 
-            {currentUser && (
-              <div className="pt-4 pb-3 border-t border-gray-200">
-                {currentUser && (
-                  <div className="mx-4 mb-4">
+              {!currentUser && (
+                <>
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                     <Link
-                      to="/dashboard"
-                      className="flex items-center justify-between bg-blue-50 hover:bg-blue-100 rounded-lg px-4 py-3 transition-colors"
+                      to="/login"
+                      className="bg-gray-100 hover:bg-gray-200 dark:bg-dark-300/30 dark:hover:bg-dark-300/50 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300 text-center"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <div className="flex items-center">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5 text-blue-600 mr-2"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-700">Your Tokens</span>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="bg-white px-3 py-1 rounded-full text-blue-800 font-medium text-sm shadow-sm">
-                          Loading...
-                        </span>
-                      </div>
+                      Log in
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="bg-gradient-to-r from-accent-blue to-accent-purple hover:from-accent-purple hover:to-accent-blue text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm hover:shadow-md transition-all duration-300 text-center"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Sign up
                     </Link>
                   </div>
-                )}
-                <div className="flex items-center px-4">
-                  <div className="flex-shrink-0">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary-100 to-blue-100 flex items-center justify-center shadow-sm">
-                      <span className="text-primary-800 font-semibold text-sm">
-                        {(
-                          currentUser.profile?.name ||
-                          currentUser.email ||
-                          "User"
-                        )
-                          .charAt(0)
-                          .toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="ml-3">
-                    <div className="text-base font-medium text-gray-800">
-                      {currentUser.profile?.name || "User"}
-                    </div>
-                    <div className="text-sm font-medium text-gray-500 truncate max-w-[200px]">
-                      {currentUser.email}
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-3 space-y-1">
-                  {currentUser.role === "user" && (
-                    <MobileNavLink path="/user-profile" label="Your Profile" onClick={() => setIsMenuOpen(false)} />
-                  )}
-
-                  {currentUser.role === "developer" && (
-                    <MobileNavLink path="/dev-profile" label="Developer Profile" onClick={() => setIsMenuOpen(false)} />
-                  )}
-
-                  <button
-                    onClick={() => {
-                      handleLogout();
-                      setIsMenuOpen(false);
-                    }}
-                    className="block w-full text-left px-4 py-2 text-base font-medium text-red-600 hover:text-red-800 hover:bg-red-50 transition-colors duration-200"
-                  >
-                    Sign out
-                  </button>
-                </div>
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -489,43 +513,32 @@ const Navbar = () => {
   );
 };
 
-// Desktop Navigation Link
+// Desktop navigation link
 const NavLink = ({ path, label, isActive }) => {
   return (
     <Link
       to={path}
-      className={`relative inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 transition-all duration-200
-        ${
-          isActive
-            ? "border-primary-500 text-primary-700 font-semibold"
-            : "border-transparent text-gray-500 hover:border-primary-300 hover:text-primary-600"
-        }
-      `}
+      className={`inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 transition-colors duration-300 ${
+        isActive
+          ? "border-accent-blue dark:border-accent-purple text-gray-900 dark:text-white"
+          : "border-transparent text-gray-500 hover:border-gray-300 dark:text-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-white"
+      }`}
     >
       {label}
-      {isActive && (
-        <motion.div
-          layoutId="desktop-nav-indicator"
-          className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-primary-500 to-primary-400 rounded-full"
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        />
-      )}
     </Link>
   );
 };
 
-// Mobile Navigation Link
+// Mobile navigation link
 const MobileNavLink = ({ path, label, isActive, onClick }) => {
   return (
     <Link
       to={path}
-      className={`block pl-3 pr-4 py-3 text-base font-medium rounded-md transition-all duration-200
-        ${
-          isActive
-            ? "text-primary-700 bg-primary-50 border-l-4 border-primary-500 shadow-sm"
-            : "text-gray-600 hover:bg-gray-50 hover:border-primary-300 hover:text-primary-700 border-l-4 border-transparent"
-        }
-      `}
+      className={`block pl-3 pr-4 py-2 text-base font-medium rounded-md transition-colors duration-300 ${
+        isActive
+          ? "bg-gray-100 dark:bg-dark-300/30 text-gray-900 dark:text-white"
+          : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-300/30 hover:text-gray-900 dark:hover:text-white"
+      }`}
       onClick={onClick}
     >
       {label}
@@ -533,12 +546,12 @@ const MobileNavLink = ({ path, label, isActive, onClick }) => {
   );
 };
 
-// Profile Dropdown Link
+// Profile menu link
 const ProfileLink = ({ to, label, onClick }) => {
   return (
     <Link
       to={to}
-      className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors duration-200"
+      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-300/30 transition-colors duration-300"
       role="menuitem"
       onClick={onClick}
     >
