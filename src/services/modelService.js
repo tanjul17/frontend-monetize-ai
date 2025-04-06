@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://ai-marketplace-monetization.onrender.com/api";
+const API_URL = "https://ai-marketplace-monetization.onrender.com/api"
 
 // Create axios instance with default headers
 const apiClient = axios.create({
@@ -174,6 +174,23 @@ export const getSimpleCompletion = async (prompt, systemMessage = null) => {
 export const testModelRoutes = async () => {
   try {
     const response = await apiClient.get("/models/test");
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+// Send a chat message with model ID to properly deduct tokens
+export const sendChatMessage = async (message, modelId) => {
+  try {
+    const payload = { message };
+    
+    // Include modelId if provided
+    if (modelId) {
+      payload.modelId = modelId;
+    }
+    
+    const response = await apiClient.post("/chat", payload);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;

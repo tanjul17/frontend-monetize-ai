@@ -1,11 +1,11 @@
 import axios from "axios";
 
-// Make sure API_URL is correctly formatted
+// Make sure https://ai-marketplace-monetization.onrender.com is correctly formatted
 const API_URL = (() => {
   const url = process.env.REACT_APP_API_URL || "https://ai-marketplace-monetization.onrender.com/api";
   // Remove trailing slash if present
   return url.endsWith('/') ? url.slice(0, -1) : url;
-})();
+})(); 
 
 console.log('Using API URL:', API_URL);
 
